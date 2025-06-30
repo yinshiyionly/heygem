@@ -1,0 +1,41 @@
+name: Build Electron App
+
+on:
+  push:
+    tags:
+      - 'v*'  # 推送版本 tag 时触发，例如 v1.0.5
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build with electron-vite
+        run: npm run build
+
+      - name: Package Electron App
+        run: |
+          npm run build:${{ matrix.os == 'windows-latest' && 'win' || matrix.os == 'ubuntu-latest' && 'linux' || 'mac' }}
+        shell: bash
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: heygem-app-${{ runner.os }}
+          path: dist/
+
