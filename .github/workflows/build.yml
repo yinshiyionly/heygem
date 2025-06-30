@@ -3,14 +3,11 @@ name: Build Electron App
 on:
   push:
     tags:
-      - 'v*'  # 推送版本 tag 时触发，例如 v1.0.5
+      - 'v*'
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+  build-win:
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -22,20 +19,24 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Clean node_modules
+        run: npx rimraf node_modules dist
 
-      - name: Build with electron-vite
+      - name: Install dependencies (skip scripts)
+        run: npm install --ignore-scripts
+
+      - name: Install native deps
+        run: npx electron-builder install-app-deps
+
+      - name: Build app
         run: npm run build
 
-      - name: Package Electron App
-        run: |
-          npm run build:${{ matrix.os == 'windows-latest' && 'win' || matrix.os == 'ubuntu-latest' && 'linux' || 'mac' }}
-        shell: bash
+      - name: Package for Windows
+        run: npm run build:win
 
-      - name: Upload Artifacts
+      - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: heygem-app-${{ runner.os }}
+          name: heygem-win
           path: dist/
 
