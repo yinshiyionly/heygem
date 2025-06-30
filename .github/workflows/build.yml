@@ -38,8 +38,40 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
+          files: dist/*.exe
+
+
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Clean node_modules
+        run: npx rimraf node_modules dist
+
+      - name: Install dependencies (skip scripts)
+        run: npm install --ignore-scripts
+
+      - name: Install native deps
+        run: npx electron-builder install-app-deps
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package for macOS
+        run: npm run build:mac || npx electron-builder --mac
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/*.dmg
 
